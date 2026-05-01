@@ -18,24 +18,13 @@ dotenv.config();
 
 const app = express();
 
-
-// ✅ CORS MUST BE FIRST
+// ✅ CORS (FINAL FIX)
 app.use(cors({
-  origin: "http://localhost:5173",
+  origin: process.env.CLIENT_ORIGIN,
   credentials: true,
 }));
 
-
-// ✅ extra safety (fix stubborn CORS issues)
-app.use((req, res, next) => {
-  res.header("Access-Control-Allow-Origin", "http://localhost:5173");
-  res.header("Access-Control-Allow-Credentials", "true");
-  res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept, Authorization");
-  next();
-});
-
-
-// ✅ other middlewares
+// ✅ middlewares
 app.use(express.json());
 app.use(helmet());
 
@@ -46,7 +35,6 @@ const limiter = rateLimit({
 });
 app.use(limiter);
 
-
 // ✅ routes
 app.use('/api/auth', authRoutes);
 app.use("/api/poll", pollRoutes);
@@ -55,30 +43,27 @@ app.use("/api/results", resultsRoutes);
 app.use("/api/admin", adminRoutes);
 app.use(errorHandler);
 
-
 // test route
 app.get("/", (req, res) => {
   res.send("Backend makkhan chal rha hai 👍👍👍");
 });
 
-
 // DB connection
 connectDB();
 
-
-// server
+// create server
 const server = http.createServer(app);
 
-
-// socket.io
+// ✅ socket.io (FINAL FIX)
 const ioInstance = new SocketIOServer(server, {
   cors: {
-    origin: "http://localhost:5173",
+    origin: process.env.CLIENT_ORIGIN,
     methods: ["GET", "POST"],
     credentials: true,
   },
 });
 
+// socket events
 ioInstance.on("connection", (socket) => {
   console.log("User Connected: ", socket.id);
 
@@ -97,7 +82,7 @@ ioInstance.on("connection", (socket) => {
 
 export const io = ioInstance;
 
-
+// port
 const PORT = process.env.PORT || 3001;
 
 server.listen(PORT, () => {
